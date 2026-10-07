@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TecnoBlu - Generatore Report Transizione Energetica</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; font-size: 12px; }
+            .page-break { page-break-before: always; }
+            .card { border: 1px solid #e5e7eb !important; shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+
+    <!-- HEADER / TOOLBAR -->
+    <header class="bg-slate-900 text-white p-4 shadow-md no-print flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center space-x-3">
+            <span class="text-xl font-bold tracking-wider text-cyan-400">TECNOBLU</span>
+            <span class="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400">Report Engine v1.0</span>
+        </div>
+        <button onclick="window.print()" class="bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-bold px-4 py-2 rounded shadow transition flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 2 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Stampa / Salva PDF
+        </button>
+    </header>
+
+    <div class="max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- PANNELLO INPUT (NO PRINT) -->
+        <div class="lg:col-span-4 space-y-6 no-print">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <span class="w-3 h-3 bg-cyan-500 rounded-full"></span> Dati Immobile e Cliente
+                </h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-500">Cliente</label>
+                        <input type="text" id="in_cliente" value="Finotti Daiana" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Superficie (m²)</label>
+                            <input type="number" id="in_mq" value="200" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Località</label>
+                            <input type="text" id="in_loc" value="Porto Viro (RO)" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <span class="w-3 h-3 bg-amber-500 rounded-full"></span> Stato Attuale (Bolletta)
+                </h2>
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Consumo Gas (Smc)</label>
+                            <input type="number" id="in_gas_smc" value="2202" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Spesa Gas (€)</label>
+                            <input type="number" id="in_gas_eur" value="2787.01" step="0.01" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Luce Domestica (kWh)</label>
+                            <input type="number" id="in_luce_kwh" value="4764" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Spesa Luce (€)</label>
+                            <input type="number" id="in_luce_eur" value="1516.58" step="0.01" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <span class="w-3 h-3 bg-emerald-500 rounded-full"></span> Progetto & Finanzia
+                </h2>
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">SCOP PDC</label>
+                            <input type="number" id="in_scop" value="3.20" step="0.05" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Costo Energia (€/kWh)</label>
+                            <input type="number" id="in_costo_kwh" value="0.30" step="0.01" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-500">Luce Residua da Rete (kWh/anno)</label>
+                        <input type="number" id="in_kwh_rete" value="1429" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                    </div>
+                    <hr>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Costo PDC + ACS (€)</label>
+                            <input type="number" id="in_costo_pdc" value="14850" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Conto Termico 1° Anno (€)</label>
+                            <input type="number" id="in_ct" value="6313.56" step="0.01" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Costo FV + Tesla (€)</label>
+                            <input type="number" id="in_costo_fv" value="19250" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-slate-500">Rata Fiscale 10a (€/anno)</label>
+                            <input type="number" id="in_detrazione_annua" value="962.50" step="0.01" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANNELLO REPORT (ANTEPRIMA & STAMPA) -->
+        <div class="lg:col-span-8 bg-white p-8 rounded-xl shadow-lg border border-slate-200 print:shadow-none print:border-none print:p-0">
+
+            <!-- INTESTAZIONE REPORT -->
+            <div class="border-b border-slate-200 pb-6 mb-6 flex justify-between items-start">
+                <div>
+                    <h1 class="text-xs font-bold tracking-widest text-cyan-600 uppercase mb-1">TecnoBlu — Energy Transition Report</h1>
+                    <h2 class="text-2xl font-black text-slate-900 uppercase">Report Commerciale Riqualificazione</h2>
+                    <p class="text-sm text-slate-500">Transizione Elettrica Integrata "Chiavi in Mano"</p>
+                </div>
+                <div class="text-right text-xs text-slate-500 space-y-1">
+                    <p><strong class="text-slate-800">Cliente:</strong> <span id="out_cliente">--</span></p>
+                    <p><strong class="text-slate-800">Immobile:</strong> <span id="out_mq">--</span> m² — <span id="out_loc">--</span></p>
+                    <p><strong class="text-slate-800">Data:</strong> 07 Ottobre 2026</p>
+                </div>
+            </div>
+
+            <!-- EXECUTIVE SUMMARY (KPI BOXES) -->
+            <div class="grid grid-cols-3 gap-4 mb-8">
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
+                    <span class="text-xs text-slate-500 uppercase font-bold">Spesa Attuale</span>
+                    <p class="text-xl font-black text-rose-600 mt-1" id="out_spesa_attuale">€ 0</p>
+                    <span class="text-[10px] text-slate-400">Gas Metano + Luce Rete</span>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
+                    <span class="text-xs text-slate-500 uppercase font-bold">Spesa Post Intervento</span>
+                    <p class="text-xl font-black text-emerald-600 mt-1" id="out_spesa_post">€ 0</p>
+                    <span class="text-[10px] text-slate-400">Spesa Residua + Maint. PDC</span>
+                </div>
+                <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-200 text-center">
+                    <span class="text-xs text-cyan-800 uppercase font-bold">Payback Reale</span>
+                    <p class="text-xl font-black text-cyan-700 mt-1" id="out_payback">0 Anni</p>
+                    <span class="text-[10px] text-cyan-600">Pareggio Flusso di Cassa</span>
+                </div>
+            </div>
+
+            <!-- SEZIONE SIMULAZIONE CLASSE ENERGETICA -->
+            <div class="mb-8 border border-slate-200 rounded-lg p-5 bg-gradient-to-r from-slate-50 to-cyan-50">
+                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Simulazione Classe Energetica & Prestazioni Impianto</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center mb-4">
+                    <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
+                        <span class="text-[10px] text-slate-400 font-bold block">SALTO CLASSE</span>
+                        <span class="text-base font-extrabold text-slate-800">F/G ➔ CLASSE A</span>
+                    </div>
+                    <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
+                        <span class="text-[10px] text-slate-400 font-bold block">EFFICIENZA RISCALDAMENTO</span>
+                        <span class="text-base font-extrabold text-emerald-600">A+++ (35°C) / A++</span>
+                    </div>
+                    <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
+                        <span class="text-[10px] text-slate-400 font-bold block">EFFICIENZA ACS</span>
+                        <span class="text-base font-extrabold text-emerald-600">A++ DEDICATO</span>
+                    </div>
+                    <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
+                        <span class="text-[10px] text-slate-400 font-bold block">COPERTURA ELETTRICA</span>
+                        <span class="text-base font-extrabold text-cyan-600">~87% ANNUO</span>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    L'azzeramento del combustibile fossile e l'apporto dell'impianto fotovoltaico con accumulo consentono un abbattimento stimato dell'indice $EP_{gl,nren}$ da oltre $150\text{ kWh/m}^2\text{anno}$ a circa $20-30\text{ kWh/m}^2\text{anno}$, determinando un avanzamento presunto di <strong>5-6 Classi Energetiche</strong> sull'immobile senza interventi sul cappotto esterno.
+                </p>
+            </div>
+
+            <!-- TABELLA QUADRO ECONOMICO COMPARATIVO -->
+            <div class="mb-8">
+                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Confronto Scenari Economici</h3>
+                <table class="w-full text-xs text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-800 text-white">
+                            <th class="p-2.5 rounded-l">Parametro</th>
+                            <th class="p-2.5">Stato Attuale</th>
+                            <th class="p-2.5">Scenario A (Solo PDC)</th>
+                            <th class="p-2.5 rounded-r bg-cyan-700">Scenario B (PDC + FV + Tesla)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 text-slate-700">
+                        <tr>
+                            <td class="p-2.5 font-semibold">Consumo Gas Metano</td>
+                            <td class="p-2.5" id="out_t_gas_att">--</td>
+                            <td class="p-2.5">0 Smc</td>
+                            <td class="p-2.5 font-bold text-cyan-800">0 Smc (Contatore Chiuso)</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2.5 font-semibold">Energia da Rete Acquistata</td>
+                            <td class="p-2.5" id="out_t_luce_att">--</td>
+                            <td class="p-2.5" id="out_t_luce_scena">--</td>
+                            <td class="p-2.5 font-bold text-cyan-800" id="out_t_luce_scenb">--</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2.5 font-semibold">Spesa Annua Energetica + Maint.</td>
+                            <td class="p-2.5 text-rose-600 font-bold" id="out_t_spesa_att">--</td>
+                            <td class="p-2.5" id="out_t_spesa_scena">--</td>
+                            <td class="p-2.5 font-bold text-emerald-600" id="out_t_spesa_scenb">--</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2.5 font-semibold">Risparmio Annuo vs Attuale</td>
+                            <td class="p-2.5">--</td>
+                            <td class="p-2.5" id="out_t_risp_scena">--</td>
+                            <td class="p-2.5 font-bold text-emerald-600" id="out_t_risp_scenb">--</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2.5 font-semibold">Investimento Lordo Iniziale</td>
+                            <td class="p-2.5">--</td>
+                            <td class="p-2.5" id="out_t_inv_scena">--</td>
+                            <td class="p-2.5 font-bold" id="out_t_inv_scenb">--</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2.5 font-semibold">Incentivi / Detrazioni</td>
+                            <td class="p-2.5">--</td>
+                            <td class="p-2.5">Conto Termico</td>
+                            <td class="p-2.5">Conto Termico + Detrazione 50%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- GRAFICO E TABELLA FLUSSO DI CASSA (PAGE BREAK FOR PRINT IF NEEDED) -->
+            <div class="mb-8">
+                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Flusso di Cassa Cumulativo (10 Anni)</h3>
+                <div class="h-64 w-full mb-4">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+            </div>
+
+            <!-- TABELLA CUMULATO ANNO PER ANNO -->
+            <div class="mb-8">
+                <table class="w-full text-[11px] text-center border-collapse border border-slate-200">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 font-bold">
+                            <th class="border p-1.5">Anno</th>
+                            <th class="border p-1.5">Anno 0</th>
+                            <th class="border p-1.5">Anno 1</th>
+                            <th class="border p-1.5">Anno 2</th>
+                            <th class="border p-1.5">Anno 3</th>
+                            <th class="border p-1.5">Anno 4</th>
+                            <th class="border p-1.5">Anno 5</th>
+                            <th class="border p-1.5 bg-emerald-100 text-emerald-900">Anno 6</th>
+                            <th class="border p-1.5">Anno 10</th>
+                        </tr>
+                    </thead>
+                    <tbody id="out_tbody_cashflow">
+                        <!-- Generato via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- CLAUSOLE PRUDENZIALI & NOTE DI CHIUSURA -->
+            <div class="border-t border-slate-200 pt-4 text-[10px] text-slate-500 space-y-1 leading-normal">
+                <p><strong>Note Tecniche e Condizioni:</strong> Nel bilancio di progetto si ipotizza l'autoconsumo del 100% dell'energia prodotta dal fotovoltaico nel periodo invernale e una copertura media annua stimata del 70% dei consumi elettrici globali dell'immobile. La produzione e l'autoconsumo reali dipenderanno dal profilo orario dei carichi, dalla stagionalità e dal funzionamento dell'accumulo. L'effettivo salto di classe energetica e le detrazioni restano subordinati alla verifica APE post-intervento e alle capienze fiscali di legge.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGICA E GRAFICO -->
+    <script>
+        let myChart = null;
+
+        function calcola() {
+            // Get Input Values
+            const cliente = document.getElementById('in_cliente').value;
+            const mq = parseFloat(document.getElementById('in_mq').value) || 0;
+            const loc = document.getElementById('in_loc').value;
+
+            const gasSmc = parseFloat(document.getElementById('in_gas_smc').value) || 0;
+            const gasEur = parseFloat(document.getElementById('in_gas_eur').value) || 0;
+            const luceKwh = parseFloat(document.getElementById('in_luce_kwh').value) || 0;
+            const luceEur = parseFloat(document.getElementById('in_luce_eur').value) || 0;
+
+            const scop = parseFloat(document.getElementById('in_scop').value) || 3.2;
+            const costoKwh = parseFloat(document.getElementById('in_costo_kwh').value) || 0.3;
+            const kwhRetePost = parseFloat(document.getElementById('in_kwh_rete').value) || 0;
+
+            const costoPdc = parseFloat(document.getElementById('in_costo_pdc').value) || 0;
+            const ct = parseFloat(document.getElementById('in_ct').value) || 0;
+            const costoFv = parseFloat(document.getElementById('in_costo_fv').value) || 0;
+            const detrazioneAnnua = parseFloat(document.getElementById('in_detrazione_annua').value) || 0;
+
+            // Calculations
+            const spesaAttuale = gasEur + luceEur;
+            const spesaPostResidua = (kwhRetePost * costoKwh) + 150; // 150€ manutenzione PDC
+            const risparmioAnnuoB = spesaAttuale - spesaPostResidua;
+            const invTotale = costoPdc + costoFv;
+
+            // Update UI Labels
+            document.getElementById('out_cliente').innerText = cliente;
+            document.getElementById('out_mq').innerText = mq;
+            document.getElementById('out_loc').innerText = loc;
+
+            document.getElementById('out_spesa_attuale').innerText = '€ ' + spesaAttuale.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('out_spesa_post').innerText = '€ ' + spesaPostResidua.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            // Table Comparative Values
+            document.getElementById('out_t_gas_att').innerText = gasSmc.toLocaleString('it-IT') + ' Smc';
+            document.getElementById('out_t_luce_att').innerText = luceKwh.toLocaleString('it-IT') + ' kWh';
+            document.getElementById('out_t_spesa_att').innerText = '€ ' + spesaAttuale.toLocaleString('it-IT', {minimumFractionDigits: 2});
+
+            // Scenario A (Solo PDC)
+            const kwhPdcTot = (20000 / scop) + luceKwh; // stima fabbisogno termico 20.000
+            const spesaScena = (kwhPdcTot * costoKwh) + 150;
+            const rispScena = spesaAttuale - spesaScena;
+            document.getElementById('out_t_luce_scena').innerText = Math.round(kwhPdcTot).toLocaleString('it-IT') + ' kWh';
+            document.getElementById('out_t_spesa_scena').innerText = '€ ' + spesaScena.toLocaleString('it-IT', {minimumFractionDigits: 2});
+            document.getElementById('out_t_risp_scena').innerText = '€ ' + rispScena.toLocaleString('it-IT', {minimumFractionDigits: 2});
+            document.getElementById('out_t_inv_scena').innerText = '€ ' + costoPdc.toLocaleString('it-IT', {minimumFractionDigits: 2});
+
+            // Scenario B (PDC + FV)
+            document.getElementById('out_t_luce_scenb').innerText = kwhRetePost.toLocaleString('it-IT') + ' kWh';
+            document.getElementById('out_t_spesa_scenb').innerText = '€ ' + spesaPostResidua.toLocaleString('it-IT', {minimumFractionDigits: 2});
+            document.getElementById('out_t_risp_scenb').innerText = '€ ' + risparmioAnnuoB.toLocaleString('it-IT', {minimumFractionDigits: 2});
+            document.getElementById('out_t_inv_scenb').innerText = '€ ' + invTotale.toLocaleString('it-IT', {minimumFractionDigits: 2});
+
+            // Cash Flow Array Generation
+            let cashFlow = [];
+            let saldo = -invTotale;
+            cashFlow.push(saldo); // Anno 0
+
+            // Anno 1
+            const flussoAnno1 = risparmioAnnuoB + ct + detrazioneAnnua;
+            saldo += flussoAnno1;
+            cashFlow.push(saldo);
+
+            // Anni 2-10
+            const flussoAnniSuccessivi = risparmioAnnuoB + detrazioneAnnua;
+            for (let i = 2; i <= 10; i++) {
+                saldo += flussoAnniSuccessivi;
+                cashFlow.push(saldo);
+            }
+
+            // Payback Calculation
+            let yearPayback = 0;
+            for (let i = 0; i < cashFlow.length; i++) {
+                if (cashFlow[i] >= 0) {
+                    const prev = cashFlow[i-1];
+                    const curr = cashFlow[i];
+                    const diff = curr - prev;
+                    yearPayback = (i - 1) + (Math.abs(prev) / diff);
+                    break;
+                }
+            }
+            document.getElementById('out_payback').innerText = yearPayback.toFixed(2) + ' Anni';
+
+            // Render Table Cashflow
+            const tbody = document.getElementById('out_tbody_cashflow');
+            tbody.innerHTML = `
+                <tr>
+                    <td class="border p-1.5 font-bold">Saldo Cumulato</td>
+                    <td class="border p-1.5 text-rose-600 font-semibold">€ ${Math.round(cashFlow[0]).toLocaleString('it-IT')}</td>
+                    <td class="border p-1.5 text-rose-600">€ ${Math.round(cashFlow[1]).toLocaleString('it-IT')}</td>
+                    <td class="border p-1.5 text-rose-600">€ ${Math.round(cashFlow[2]).toLocaleString('it-IT')}</td>
+                    <td class="border p-1.5 text-rose-600">€ ${Math.round(cashFlow[3]).toLocaleString('it-IT')}</td>
+                    <td class="border p-1.5 text-rose-600">€ ${Math.round(cashFlow[4]).toLocaleString('it-IT')}</td>
+                    <td class="border p-1.5 text-rose-600">€ ${Math.round(cashFlow[5]).toLocaleString('it-IT')}</td>
+                    <td class="border p-1.5 bg-emerald-100 text-emerald-800 font-bold">€ ${Math.round(cashFlow[6]).toLocaleString('it-IT')}</td>
+                    <td class="border p-1.5 text-emerald-700 font-bold">€ ${Math.round(cashFlow[10]).toLocaleString('it-IT')}</td>
+                </tr>
+            `;
+
+            // Update Chart
+            updateChart(cashFlow);
+        }
+
+        function updateChart(cashFlowData) {
+            const ctx = document.getElementById('cashFlowChart').getContext('2d');
+            
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['T0', 'Anno 1', 'Anno 2', 'Anno 3', 'Anno 4', 'Anno 5', 'Anno 6', 'Anno 7', 'Anno 8', 'Anno 9', 'Anno 10'],
+                    datasets: [{
+                        label: 'Flusso di Cassa Cumulato (€)',
+                        data: cashFlowData,
+                        borderColor: '#0284c7',
+                        backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#0284c7'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                callback: function(value) { return '€ ' + value.toLocaleString('it-IT'); }
+                            }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Initial Calculation on Load
+        window.onload = calcola;
+    </script>
+</body>
+</html>
