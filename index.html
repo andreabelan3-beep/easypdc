@@ -3,438 +3,457 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TecnoBlu - Generatore Report Transizione Energetica</title>
-    <!-- Tailwind CSS CDN -->
+    <title>TecnoBlu ERP - Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @media print {
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            body { background: white; font-size: 12px; }
-            .page-break { page-break-before: always; }
-            .card { border: 1px solid #e5e7eb !important; shadow: none !important; }
-        }
+        .drawer-open { transform: translateX(0); }
+        .drawer-closed { transform: translateX(-100%); }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
 
-    <!-- HEADER / TOOLBAR -->
-    <header class="bg-slate-900 text-white p-4 shadow-md no-print flex justify-between items-center sticky top-0 z-50">
-        <div class="flex items-center space-x-3">
-            <span class="text-xl font-bold tracking-wider text-cyan-400">TECNOBLU</span>
-            <span class="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400">Report Engine v1.0</span>
-        </div>
-        <button onclick="window.print()" class="bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-bold px-4 py-2 rounded shadow transition flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 2 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-            Stampa / Salva PDF
-        </button>
-    </header>
-
-    <div class="max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        <!-- PANNELLO INPUT (NO PRINT) -->
-        <div class="lg:col-span-4 space-y-6 no-print">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <span class="w-3 h-3 bg-cyan-500 rounded-full"></span> Dati Immobile e Cliente
-                </h2>
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-xs font-semibold text-slate-500">Cliente</label>
-                        <input type="text" id="in_cliente" value="Finotti Daiana" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Superficie (m²)</label>
-                            <input type="number" id="in_mq" value="200" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Località</label>
-                            <input type="text" id="in_loc" value="Porto Viro (RO)" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                    </div>
-                </div>
+    <!-- LOGIN OVERLAY -->
+    <div id="login-modal" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-6">
+            <div class="text-center">
+                <h1 class="text-2xl font-black text-cyan-400 tracking-wider">TECNOBLU ERP</h1>
+                <p class="text-xs text-slate-400 mt-1">Accedi al gestionale aziendale</p>
             </div>
-
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <span class="w-3 h-3 bg-amber-500 rounded-full"></span> Stato Attuale (Bolletta)
-                </h2>
-                <div class="space-y-3">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Consumo Gas (Smc)</label>
-                            <input type="number" id="in_gas_smc" value="2202" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Spesa Gas (€)</label>
-                            <input type="number" id="in_gas_eur" value="2787.01" step="0.01" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Luce Domestica (kWh)</label>
-                            <input type="number" id="in_luce_kwh" value="4764" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Spesa Luce (€)</label>
-                            <input type="number" id="in_luce_eur" value="1516.58" step="0.01" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <span class="w-3 h-3 bg-emerald-500 rounded-full"></span> Progetto & Finanzia
-                </h2>
-                <div class="space-y-3">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">SCOP PDC</label>
-                            <input type="number" id="in_scop" value="3.20" step="0.05" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Costo Energia (€/kWh)</label>
-                            <input type="number" id="in_costo_kwh" value="0.30" step="0.01" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-slate-500">Luce Residua da Rete (kWh/anno)</label>
-                        <input type="number" id="in_kwh_rete" value="1429" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                    </div>
-                    <hr>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Costo PDC + ACS (€)</label>
-                            <input type="number" id="in_costo_pdc" value="14850" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Conto Termico 1° Anno (€)</label>
-                            <input type="number" id="in_ct" value="6313.56" step="0.01" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Costo FV + Tesla (€)</label>
-                            <input type="number" id="in_costo_fv" value="19250" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500">Rata Fiscale 10a (€/anno)</label>
-                            <input type="number" id="in_detrazione_annua" value="962.50" step="0.01" class="w-full p-2 border rounded text-sm bg-slate-50" oninput="calcola()">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- PANNELLO REPORT (ANTEPRIMA & STAMPA) -->
-        <div class="lg:col-span-8 bg-white p-8 rounded-xl shadow-lg border border-slate-200 print:shadow-none print:border-none print:p-0">
-
-            <!-- INTESTAZIONE REPORT -->
-            <div class="border-b border-slate-200 pb-6 mb-6 flex justify-between items-start">
+            <div class="space-y-4">
                 <div>
-                    <h1 class="text-xs font-bold tracking-widest text-cyan-600 uppercase mb-1">TecnoBlu — Energy Transition Report</h1>
-                    <h2 class="text-2xl font-black text-slate-900 uppercase">Report Commerciale Riqualificazione</h2>
-                    <p class="text-sm text-slate-500">Transizione Elettrica Integrata "Chiavi in Mano"</p>
+                    <label class="text-xs font-semibold text-slate-400 block mb-1">Email</label>
+                    <input type="email" id="login_email" value="andrea@tecnoblu.net" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
                 </div>
-                <div class="text-right text-xs text-slate-500 space-y-1">
-                    <p><strong class="text-slate-800">Cliente:</strong> <span id="out_cliente">--</span></p>
-                    <p><strong class="text-slate-800">Immobile:</strong> <span id="out_mq">--</span> m² — <span id="out_loc">--</span></p>
-                    <p><strong class="text-slate-800">Data:</strong> 07 Ottobre 2026</p>
+                <div>
+                    <label class="text-xs font-semibold text-slate-400 block mb-1">Password</label>
+                    <input type="password" id="login_pass" value="1234" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
                 </div>
+                <button onclick="login()" class="w-full bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold py-3 rounded-lg transition shadow-lg shadow-cyan-500/20">
+                    Accedi
+                </button>
+                <p id="login-error" class="text-xs text-rose-500 text-center hidden">Credenziali errate o utente non autorizzato dal proprietario.</p>
             </div>
-
-            <!-- EXECUTIVE SUMMARY (KPI BOXES) -->
-            <div class="grid grid-cols-3 gap-4 mb-8">
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
-                    <span class="text-xs text-slate-500 uppercase font-bold">Spesa Attuale</span>
-                    <p class="text-xl font-black text-rose-600 mt-1" id="out_spesa_attuale">€ 0</p>
-                    <span class="text-[10px] text-slate-400">Gas Metano + Luce Rete</span>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
-                    <span class="text-xs text-slate-500 uppercase font-bold">Spesa Post Intervento</span>
-                    <p class="text-xl font-black text-emerald-600 mt-1" id="out_spesa_post">€ 0</p>
-                    <span class="text-[10px] text-slate-400">Spesa Residua + Maint. PDC</span>
-                </div>
-                <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-200 text-center">
-                    <span class="text-xs text-cyan-800 uppercase font-bold">Payback Reale</span>
-                    <p class="text-xl font-black text-cyan-700 mt-1" id="out_payback">0 Anni</p>
-                    <span class="text-[10px] text-cyan-600">Pareggio Flusso di Cassa</span>
-                </div>
-            </div>
-
-            <!-- SEZIONE SIMULAZIONE CLASSE ENERGETICA -->
-            <div class="mb-8 border border-slate-200 rounded-lg p-5 bg-gradient-to-r from-slate-50 to-cyan-50">
-                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Simulazione Classe Energetica & Prestazioni Impianto</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center mb-4">
-                    <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
-                        <span class="text-[10px] text-slate-400 font-bold block">SALTO CLASSE</span>
-                        <span class="text-base font-extrabold text-slate-800">F/G ➔ CLASSE A</span>
-                    </div>
-                    <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
-                        <span class="text-[10px] text-slate-400 font-bold block">EFFICIENZA RISCALDAMENTO</span>
-                        <span class="text-base font-extrabold text-emerald-600">A+++ (35°C) / A++</span>
-                    </div>
-                    <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
-                        <span class="text-[10px] text-slate-400 font-bold block">EFFICIENZA ACS</span>
-                        <span class="text-base font-extrabold text-emerald-600">A++ DEDICATO</span>
-                    </div>
-                    <div class="bg-white p-3 rounded shadow-sm border border-slate-200">
-                        <span class="text-[10px] text-slate-400 font-bold block">COPERTURA ELETTRICA</span>
-                        <span class="text-base font-extrabold text-cyan-600">~87% ANNUO</span>
-                    </div>
-                </div>
-                <p class="text-xs text-slate-600 leading-relaxed">
-                    L'azzeramento del combustibile fossile e l'apporto dell'impianto fotovoltaico con accumulo consentono un abbattimento stimato dell'indice $EP_{gl,nren}$ da oltre $150\text{ kWh/m}^2\text{anno}$ a circa $20-30\text{ kWh/m}^2\text{anno}$, determinando un avanzamento presunto di <strong>5-6 Classi Energetiche</strong> sull'immobile senza interventi sul cappotto esterno.
-                </p>
-            </div>
-
-            <!-- TABELLA QUADRO ECONOMICO COMPARATIVO -->
-            <div class="mb-8">
-                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Confronto Scenari Economici</h3>
-                <table class="w-full text-xs text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-800 text-white">
-                            <th class="p-2.5 rounded-l">Parametro</th>
-                            <th class="p-2.5">Stato Attuale</th>
-                            <th class="p-2.5">Scenario A (Solo PDC)</th>
-                            <th class="p-2.5 rounded-r bg-cyan-700">Scenario B (PDC + FV + Tesla)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200 text-slate-700">
-                        <tr>
-                            <td class="p-2.5 font-semibold">Consumo Gas Metano</td>
-                            <td class="p-2.5" id="out_t_gas_att">--</td>
-                            <td class="p-2.5">0 Smc</td>
-                            <td class="p-2.5 font-bold text-cyan-800">0 Smc (Contatore Chiuso)</td>
-                        </tr>
-                        <tr>
-                            <td class="p-2.5 font-semibold">Energia da Rete Acquistata</td>
-                            <td class="p-2.5" id="out_t_luce_att">--</td>
-                            <td class="p-2.5" id="out_t_luce_scena">--</td>
-                            <td class="p-2.5 font-bold text-cyan-800" id="out_t_luce_scenb">--</td>
-                        </tr>
-                        <tr>
-                            <td class="p-2.5 font-semibold">Spesa Annua Energetica + Maint.</td>
-                            <td class="p-2.5 text-rose-600 font-bold" id="out_t_spesa_att">--</td>
-                            <td class="p-2.5" id="out_t_spesa_scena">--</td>
-                            <td class="p-2.5 font-bold text-emerald-600" id="out_t_spesa_scenb">--</td>
-                        </tr>
-                        <tr>
-                            <td class="p-2.5 font-semibold">Risparmio Annuo vs Attuale</td>
-                            <td class="p-2.5">--</td>
-                            <td class="p-2.5" id="out_t_risp_scena">--</td>
-                            <td class="p-2.5 font-bold text-emerald-600" id="out_t_risp_scenb">--</td>
-                        </tr>
-                        <tr>
-                            <td class="p-2.5 font-semibold">Investimento Lordo Iniziale</td>
-                            <td class="p-2.5">--</td>
-                            <td class="p-2.5" id="out_t_inv_scena">--</td>
-                            <td class="p-2.5 font-bold" id="out_t_inv_scenb">--</td>
-                        </tr>
-                        <tr>
-                            <td class="p-2.5 font-semibold">Incentivi / Detrazioni</td>
-                            <td class="p-2.5">--</td>
-                            <td class="p-2.5">Conto Termico</td>
-                            <td class="p-2.5">Conto Termico + Detrazione 50%</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- GRAFICO E TABELLA FLUSSO DI CASSA (PAGE BREAK FOR PRINT IF NEEDED) -->
-            <div class="mb-8">
-                <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Flusso di Cassa Cumulativo (10 Anni)</h3>
-                <div class="h-64 w-full mb-4">
-                    <canvas id="cashFlowChart"></canvas>
-                </div>
-            </div>
-
-            <!-- TABELLA CUMULATO ANNO PER ANNO -->
-            <div class="mb-8">
-                <table class="w-full text-[11px] text-center border-collapse border border-slate-200">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-700 font-bold">
-                            <th class="border p-1.5">Anno</th>
-                            <th class="border p-1.5">Anno 0</th>
-                            <th class="border p-1.5">Anno 1</th>
-                            <th class="border p-1.5">Anno 2</th>
-                            <th class="border p-1.5">Anno 3</th>
-                            <th class="border p-1.5">Anno 4</th>
-                            <th class="border p-1.5">Anno 5</th>
-                            <th class="border p-1.5 bg-emerald-100 text-emerald-900">Anno 6</th>
-                            <th class="border p-1.5">Anno 10</th>
-                        </tr>
-                    </thead>
-                    <tbody id="out_tbody_cashflow">
-                        <!-- Generato via JS -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- CLAUSOLE PRUDENZIALI & NOTE DI CHIUSURA -->
-            <div class="border-t border-slate-200 pt-4 text-[10px] text-slate-500 space-y-1 leading-normal">
-                <p><strong>Note Tecniche e Condizioni:</strong> Nel bilancio di progetto si ipotizza l'autoconsumo del 100% dell'energia prodotta dal fotovoltaico nel periodo invernale e una copertura media annua stimata del 70% dei consumi elettrici globali dell'immobile. La produzione e l'autoconsumo reali dipenderanno dal profilo orario dei carichi, dalla stagionalità e dal funzionamento dell'accumulo. L'effettivo salto di classe energetica e le detrazioni restano subordinati alla verifica APE post-intervento e alle capienze fiscali di legge.</p>
-            </div>
-
         </div>
     </div>
 
-    <!-- SCRIPT LOGICA E GRAFICO -->
-    <script>
-        let myChart = null;
+    <!-- MAIN APP STRUCTURE -->
+    <div id="app" class="hidden flex-1 flex flex-col">
+        <!-- TOP NAVBAR -->
+        <header class="bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between sticky top-0 z-30">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleDrawer()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <span class="text-lg font-bold text-cyan-400 tracking-wider">TECNOBLU <span class="text-xs text-slate-400 font-normal">v2.0 ERP</span></span>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="user-display" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full text-slate-300"></span>
+                <button onclick="logout()" class="text-xs text-rose-400 hover:text-rose-300">Esci</button>
+            </div>
+        </header>
 
-        function calcola() {
-            // Get Input Values
-            const cliente = document.getElementById('in_cliente').value;
-            const mq = parseFloat(document.getElementById('in_mq').value) || 0;
-            const loc = document.getElementById('in_loc').value;
+        <!-- DRAWER MENU -->
+        <div id="drawer" class="fixed inset-y-0 left-0 w-72 bg-slate-900 border-r border-slate-800 z-40 transform drawer-closed transition-transform duration-300 ease-in-out p-5 flex flex-col justify-between">
+            <div class="space-y-6">
+                <div class="flex justify-between items-center pb-4 border-b border-slate-800">
+                    <span class="font-bold text-slate-200">Menù Gestionale</span>
+                    <button onclick="toggleDrawer()" class="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <nav class="space-y-1">
+                    <button onclick="navigate('marketing')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 text-slate-300 flex items-center gap-3">📊 Marketing & CRM</button>
+                    <button onclick="navigate('clienti')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 text-slate-300 flex items-center gap-3">👥 Anagrafica Clienti</button>
+                    <button onclick="navigate('preventivi')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 text-slate-300 flex items-center gap-3">📄 Preventivi</button>
+                    <button onclick="navigate('commesse')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 text-slate-300 flex items-center gap-3">🏗️ Attività & Commesse</button>
+                    <button onclick="navigate('economia')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 text-slate-300 flex items-center gap-3">💶 Sezione Economica & SAL</button>
+                    <button onclick="navigate('articoli')" class="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 text-slate-300 flex items-center gap-3">⚙️ Articoli & AI Configurator</button>
+                </nav>
+            </div>
+            <div class="text-[10px] text-slate-500 border-t border-slate-800 pt-3">
+                TecnoBlu Enterprise Core Systems
+            </div>
+        </div>
 
-            const gasSmc = parseFloat(document.getElementById('in_gas_smc').value) || 0;
-            const gasEur = parseFloat(document.getElementById('in_gas_eur').value) || 0;
-            const luceKwh = parseFloat(document.getElementById('in_luce_kwh').value) || 0;
-            const luceEur = parseFloat(document.getElementById('in_luce_eur').value) || 0;
-
-            const scop = parseFloat(document.getElementById('in_scop').value) || 3.2;
-            const costoKwh = parseFloat(document.getElementById('in_costo_kwh').value) || 0.3;
-            const kwhRetePost = parseFloat(document.getElementById('in_kwh_rete').value) || 0;
-
-            const costoPdc = parseFloat(document.getElementById('in_costo_pdc').value) || 0;
-            const ct = parseFloat(document.getElementById('in_ct').value) || 0;
-            const costoFv = parseFloat(document.getElementById('in_costo_fv').value) || 0;
-            const detrazioneAnnua = parseFloat(document.getElementById('in_detrazione_annua').value) || 0;
-
-            // Calculations
-            const spesaAttuale = gasEur + luceEur;
-            const spesaPostResidua = (kwhRetePost * costoKwh) + 150; // 150€ manutenzione PDC
-            const risparmioAnnuoB = spesaAttuale - spesaPostResidua;
-            const invTotale = costoPdc + costoFv;
-
-            // Update UI Labels
-            document.getElementById('out_cliente').innerText = cliente;
-            document.getElementById('out_mq').innerText = mq;
-            document.getElementById('out_loc').innerText = loc;
-
-            document.getElementById('out_spesa_attuale').innerText = '€ ' + spesaAttuale.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('out_spesa_post').innerText = '€ ' + spesaPostResidua.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-            // Table Comparative Values
-            document.getElementById('out_t_gas_att').innerText = gasSmc.toLocaleString('it-IT') + ' Smc';
-            document.getElementById('out_t_luce_att').innerText = luceKwh.toLocaleString('it-IT') + ' kWh';
-            document.getElementById('out_t_spesa_att').innerText = '€ ' + spesaAttuale.toLocaleString('it-IT', {minimumFractionDigits: 2});
-
-            // Scenario A (Solo PDC)
-            const kwhPdcTot = (20000 / scop) + luceKwh; // stima fabbisogno termico 20.000
-            const spesaScena = (kwhPdcTot * costoKwh) + 150;
-            const rispScena = spesaAttuale - spesaScena;
-            document.getElementById('out_t_luce_scena').innerText = Math.round(kwhPdcTot).toLocaleString('it-IT') + ' kWh';
-            document.getElementById('out_t_spesa_scena').innerText = '€ ' + spesaScena.toLocaleString('it-IT', {minimumFractionDigits: 2});
-            document.getElementById('out_t_risp_scena').innerText = '€ ' + rispScena.toLocaleString('it-IT', {minimumFractionDigits: 2});
-            document.getElementById('out_t_inv_scena').innerText = '€ ' + costoPdc.toLocaleString('it-IT', {minimumFractionDigits: 2});
-
-            // Scenario B (PDC + FV)
-            document.getElementById('out_t_luce_scenb').innerText = kwhRetePost.toLocaleString('it-IT') + ' kWh';
-            document.getElementById('out_t_spesa_scenb').innerText = '€ ' + spesaPostResidua.toLocaleString('it-IT', {minimumFractionDigits: 2});
-            document.getElementById('out_t_risp_scenb').innerText = '€ ' + risparmioAnnuoB.toLocaleString('it-IT', {minimumFractionDigits: 2});
-            document.getElementById('out_t_inv_scenb').innerText = '€ ' + invTotale.toLocaleString('it-IT', {minimumFractionDigits: 2});
-
-            // Cash Flow Array Generation
-            let cashFlow = [];
-            let saldo = -invTotale;
-            cashFlow.push(saldo); // Anno 0
-
-            // Anno 1
-            const flussoAnno1 = risparmioAnnuoB + ct + detrazioneAnnua;
-            saldo += flussoAnno1;
-            cashFlow.push(saldo);
-
-            // Anni 2-10
-            const flussoAnniSuccessivi = risparmioAnnuoB + detrazioneAnnua;
-            for (let i = 2; i <= 10; i++) {
-                saldo += flussoAnniSuccessivi;
-                cashFlow.push(saldo);
-            }
-
-            // Payback Calculation
-            let yearPayback = 0;
-            for (let i = 0; i < cashFlow.length; i++) {
-                if (cashFlow[i] >= 0) {
-                    const prev = cashFlow[i-1];
-                    const curr = cashFlow[i];
-                    const diff = curr - prev;
-                    yearPayback = (i - 1) + (Math.abs(prev) / diff);
-                    break;
-                }
-            }
-            document.getElementById('out_payback').innerText = yearPayback.toFixed(2) + ' Anni';
-
-            // Render Table Cashflow
-            const tbody = document.getElementById('out_tbody_cashflow');
-            tbody.innerHTML = `
-                <tr>
-                    <td class="border p-1.5 font-bold">Saldo Cumulato</td>
-                    <td class="border p-1.5 text-rose-600 font-semibold">€ ${Math.round(cashFlow[0]).toLocaleString('it-IT')}</td>
-                    <td class="border p-1.5 text-rose-600">€ ${Math.round(cashFlow[1]).toLocaleString('it-IT')}</td>
-                    <td class="border p-1.5 text-rose-600">€ ${Math.round(cashFlow[2]).toLocaleString('it-IT')}</td>
-                    <td class="border p-1.5 text-rose-600">€ ${Math.round(cashFlow[3]).toLocaleString('it-IT')}</td>
-                    <td class="border p-1.5 text-rose-600">€ ${Math.round(cashFlow[4]).toLocaleString('it-IT')}</td>
-                    <td class="border p-1.5 text-rose-600">€ ${Math.round(cashFlow[5]).toLocaleString('it-IT')}</td>
-                    <td class="border p-1.5 bg-emerald-100 text-emerald-800 font-bold">€ ${Math.round(cashFlow[6]).toLocaleString('it-IT')}</td>
-                    <td class="border p-1.5 text-emerald-700 font-bold">€ ${Math.round(cashFlow[10]).toLocaleString('it-IT')}</td>
-                </tr>
-            `;
-
-            // Update Chart
-            updateChart(cashFlow);
-        }
-
-        function updateChart(cashFlowData) {
-            const ctx = document.getElementById('cashFlowChart').getContext('2d');
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 p-6 max-w-7xl w-full mx-auto">
             
-            if (myChart) {
-                myChart.destroy();
-            }
+            <!-- VIEW: MARKETING / CRM -->
+            <section id="view-marketing" class="view-panel space-y-4">
+                <h2 class="text-xl font-bold text-white">CRM & Marketing (Pipeline Lead)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                        <span class="text-xs text-slate-400 font-bold uppercase">1. Contatto Iniziale</span>
+                        <div class="mt-3 space-y-2">
+                            <div class="bg-slate-900 p-2.5 rounded border border-slate-700 text-xs">
+                                <strong>Rossi Mario</strong> - Richiesta FTV + PDC
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                        <span class="text-xs text-slate-400 font-bold uppercase">2. Sopralluogo Eseguito</span>
+                        <div class="mt-3 space-y-2">
+                            <div class="bg-slate-900 p-2.5 rounded border border-slate-700 text-xs">
+                                <strong>Finotti Daiana</strong> - Verifica Canna Fumaria
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                        <span class="text-xs text-slate-400 font-bold uppercase">3. Preventivo Inviato</span>
+                        <div class="mt-3 space-y-2">
+                            <div class="bg-slate-900 p-2.5 rounded border border-slate-700 text-xs">
+                                <strong>Bianchi Luigi</strong> - Offerta € 34.100
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                        <span class="text-xs text-emerald-400 font-bold uppercase">4. Commessa Acquisita</span>
+                        <div class="mt-3 space-y-2">
+                            <div class="bg-slate-900 p-2.5 rounded border border-emerald-500/30 text-xs">
+                                <strong>Verdi Giuseppe</strong> - Contratto Firmato
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['T0', 'Anno 1', 'Anno 2', 'Anno 3', 'Anno 4', 'Anno 5', 'Anno 6', 'Anno 7', 'Anno 8', 'Anno 9', 'Anno 10'],
-                    datasets: [{
-                        label: 'Flusso di Cassa Cumulato (€)',
-                        data: cashFlowData,
-                        borderColor: '#0284c7',
-                        backgroundColor: 'rgba(2, 132, 199, 0.08)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.2,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#0284c7'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            grid: { color: '#f1f5f9' },
-                            ticks: {
-                                callback: function(value) { return '€ ' + value.toLocaleString('it-IT'); }
-                            }
-                        },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
+            <!-- VIEW: CLIENTS -->
+            <section id="view-clienti" class="view-panel hidden space-y-4">
+                <h2 class="text-xl font-bold text-white">Database Anagrafica Clienti</h2>
+                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                    <table class="w-full text-xs text-left text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase font-bold">
+                            <tr>
+                                <th class="p-3">Cliente</th>
+                                <th class="p-3">Codice Fiscale / P.IVA</th>
+                                <th class="p-3">Indirizzo / Località</th>
+                                <th class="p-3">Telefono / Email</th>
+                                <th class="p-3">Stato</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700">
+                            <tr>
+                                <td class="p-3 font-semibold text-white">Finotti Daiana</td>
+                                <td class="p-3">FNTDNI80A41H620X</td>
+                                <td class="p-3">Porto Viro (RO)</td>
+                                <td class="p-3">+39 340 0000000</td>
+                                <td class="p-3"><span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">Attivo</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW: COMMESSE & EBITDA ENGINE -->
+            <section id="view-commesse" class="view-panel hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-white">Attività, Commesse & Calcolo EBITDA</h2>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- CONFIGURATORE COMMESSA -->
+                    <div class="lg:col-span-7 bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-4">
+                        <h3 class="text-sm font-bold text-cyan-400 uppercase">Parametri Economici Commessa</h3>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-400">Cliente</label>
+                                <input type="text" id="com_cliente" value="Finotti Daiana" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-xs text-white">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400">Valore Contratto / Preventivo (€)</label>
+                                <input type="number" id="com_ricavo" value="34100" oninput="calcolaEbitda()" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-xs text-white font-bold">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-400">Costo Materiali (€)</label>
+                                <input type="number" id="com_mat" value="18500" oninput="calcolaEbitda()" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-xs text-white">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400">Spese Generali / Cantiere (€)</label>
+                                <input type="number" id="com_spese" value="1200" oninput="calcolaEbitda()" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-xs text-white">
+                            </div>
+                        </div>
+
+                        <hr class="border-slate-700">
+
+                        <!-- TOGGLE MANODOPERA INTERNA VS SUBAPPALTO -->
+                        <div class="space-y-3">
+                            <label class="text-xs font-bold text-slate-300 block">Gestione Manodopera & Cantiere</label>
+                            <div class="flex items-center gap-6">
+                                <label class="flex items-center gap-2 cursor-pointer text-xs">
+                                    <input type="radio" name="tipo_mano" value="interna" checked onchange="toggleManodopera()" class="text-cyan-500">
+                                    <span>Manodopera Interna (Default)</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer text-xs">
+                                    <input type="radio" name="tipo_mano" value="subappalto" onchange="toggleManodopera()" class="text-cyan-500">
+                                    <span class="text-amber-400 font-semibold">Subappalto Esterno</span>
+                                </label>
+                            </div>
+
+                            <!-- INTERNA -->
+                            <div id="box-mano-interna" class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs text-slate-400">Ore Stimate Lavoro</label>
+                                    <input type="number" id="com_ore" value="80" oninput="calcolaEbitda()" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-xs text-white">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-400">Costo Orario Interno (€/h)</label>
+                                    <input type="number" id="com_costo_ora" value="35" oninput="calcolaEbitda()" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-xs text-white">
+                                </div>
+                            </div>
+
+                            <!-- SUBAPPALTO -->
+                            <div id="box-subappalto" class="hidden space-y-3 bg-slate-900/50 p-3 rounded border border-amber-500/30">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs text-slate-400">Seleziona Subappaltatore</label>
+                                        <select id="sub_fornitore" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-xs text-white">
+                                            <option value="TermoIdraulica Rossi SRL">TermoIdraulica Rossi SRL</option>
+                                            <option value="ElettroImpianti Bianchi SNC">ElettroImpianti Bianchi SNC</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-amber-400 font-bold">Costo Totale Subappalto (€)</label>
+                                        <input type="number" id="com_sub_costo" value="4500" oninput="calcolaEbitda()" class="w-full bg-slate-900 border border-amber-500/50 p-2 rounded text-xs text-white font-bold">
+                                    </div>
+                                </div>
+                                <button onclick="generaContrattoSubappalto()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded text-xs">
+                                    📄 Genera Contratto di Subappalto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OUTPUT FINANCIAL / EBITDA BOX -->
+                    <div class="lg:col-span-5 bg-slate-800 p-5 rounded-xl border border-slate-700 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-400 uppercase mb-4">Marginalità Commessa</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-xs border-b border-slate-700 pb-2">
+                                    <span class="text-slate-400">Ricavo Totale:</span>
+                                    <span id="out_com_ricavo" class="font-bold text-white">€ 0</span>
+                                </div>
+                                <div class="flex justify-between text-xs border-b border-slate-700 pb-2">
+                                    <span class="text-slate-400">Costo Materiali:</span>
+                                    <span id="out_com_mat" class="text-rose-400">€ 0</span>
+                                </div>
+                                <div class="flex justify-between text-xs border-b border-slate-700 pb-2">
+                                    <span class="text-slate-400">Costo Manodopera/Subappalto:</span>
+                                    <span id="out_com_mano" class="text-rose-400">€ 0</span>
+                                </div>
+                                <div class="flex justify-between text-xs border-b border-slate-700 pb-2">
+                                    <span class="text-slate-400">Spese Generali:</span>
+                                    <span id="out_com_spese" class="text-rose-400">€ 0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 p-4 rounded-xl border border-cyan-500/30 text-center mt-6">
+                            <span class="text-xs text-cyan-400 font-bold uppercase tracking-wider">EBITDA Commessa</span>
+                            <p id="out_ebitda_val" class="text-3xl font-black text-emerald-400 mt-1">€ 0</p>
+                            <span id="out_ebitda_pct" class="text-xs text-slate-400">Margine: 0%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: SEZIONE ECONOMICA / SAL -->
+            <section id="view-economia" class="view-panel hidden space-y-4">
+                <h2 class="text-xl font-bold text-white">Stato Avanzamento Lavori (SAL) & Fatturazione</h2>
+                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                    <table class="w-full text-xs text-left text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase font-bold">
+                            <tr>
+                                <th class="p-2.5">Fase Economica</th>
+                                <th class="p-2.5">% Importo</th>
+                                <th class="p-2.5">Valore (€)</th>
+                                <th class="p-2.5">Stato Fattura</th>
+                                <th class="p-2.5">Incasso</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700">
+                            <tr>
+                                <td class="p-2.5 font-semibold">Fattura Acconto</td>
+                                <td class="p-2.5">30%</td>
+                                <td class="p-2.5">€ 10.230,00</td>
+                                <td class="p-2.5 text-emerald-400">Emessa (FT-2026/89)</td>
+                                <td class="p-2.5"><span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">Saldato</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2.5 font-semibold">SAL 1 (Consegna Materiale)</td>
+                                <td class="p-2.5">40%</td>
+                                <td class="p-2.5">€ 13.640,00</td>
+                                <td class="p-2.5 text-amber-400">Da Emettere</td>
+                                <td class="p-2.5"><span class="bg-slate-700 text-slate-400 px-2 py-0.5 rounded">In attesa</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2.5 font-semibold">Saldo Finale & Collaudo</td>
+                                <td class="p-2.5">30%</td>
+                                <td class="p-2.5">€ 10.230,00</td>
+                                <td class="p-2.5 text-slate-500">Bloccato</td>
+                                <td class="p-2.5"><span class="bg-slate-700 text-slate-400 px-2 py-0.5 rounded">In attesa</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW: ARTICOLI & PREVENTIVATORE PREDITTIVO AI -->
+            <section id="view-articoli" class="view-panel hidden space-y-6">
+                <h2 class="text-xl font-bold text-white">Articoli & Configuratore Prodotto "Centrale Termica"</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-4">
+                        <h3 class="text-sm font-bold text-cyan-400 uppercase">Distinta Base (Recipe Builder)</h3>
+                        <div class="space-y-2" id="recipe-list">
+                            <div class="flex justify-between items-center bg-slate-900 p-2.5 rounded text-xs">
+                                <div>
+                                    <p class="font-bold text-white">Pompa di Calore Monoblocco 12kW</p>
+                                    <p class="text-slate-500">Costo: € 7.500 | Tempo: 16 ore</p>
+                                </div>
+                                <span class="text-emerald-400 font-bold">€ 7.500</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-slate-900 p-2.5 rounded text-xs">
+                                <div>
+                                    <p class="font-bold text-white">Puffer Inox 300L + Gruppo Rilancio</p>
+                                    <p class="text-slate-500">Costo: € 2.200 | Tempo: 8 ore</p>
+                                </div>
+                                <span class="text-emerald-400 font-bold">€ 2.200</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-4">
+                        <h3 class="text-sm font-bold text-amber-400 uppercase">Calcolo Automatico Prodotto Proposto</h3>
+                        <div class="space-y-3 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Somma Costo Materiali:</span>
+                                <span class="font-bold text-white">€ 9.700,00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Somma Ore Installazione:</span>
+                                <span class="font-bold text-white">24 Ore</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Costo Manodopera Stimato (@35€/h):</span>
+                                <span class="font-bold text-white">€ 840,00</span>
+                            </div>
+                            <hr class="border-slate-700">
+                            <div>
+                                <label class="text-slate-400 block mb-1">MOL Target / Prezzo Proposto (€)</label>
+                                <input type="number" id="pred_mol" value="16500" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-sm text-emerald-400 font-bold">
+                            </div>
+                            <div class="p-3 bg-cyan-950/50 border border-cyan-500/30 rounded text-[11px] text-cyan-300">
+                                🤖 <strong>Predizione AI:</strong> In base ai cantieri passati a Porto Viro, questo pacchetto ha una probabilità di chiusura del 82% con MOL al 36%.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- SCRIPT APPLICATION LOGIC -->
+    <script>
+        // Auth State
+        function login() {
+            const e = document.getElementById('login_email').value;
+            const p = document.getElementById('login_pass').value;
+            if (e === 'andrea@tecnoblu.net' && p === '1234') {
+                document.getElementById('login-modal').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                document.getElementById('user-display').innerText = 'Andrea (Proprietario)';
+                calcolaEbitda();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
         }
 
-        // Initial Calculation on Load
-        window.onload = calcola;
+        function logout() {
+            document.getElementById('login-modal').classList.remove('hidden');
+            document.getElementById('app').classList.add('hidden');
+        }
+
+        // Drawer
+        function toggleDrawer() {
+            const drawer = document.getElementById('drawer');
+            drawer.classList.toggle('drawer-closed');
+            drawer.classList.toggle('drawer-open');
+        }
+
+        // Navigation
+        function navigate(viewId) {
+            document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+            toggleDrawer();
+        }
+
+        // Commessa & EBITDA Engine Logic
+        function toggleManodopera() {
+            const tipo = document.querySelector('input[name="tipo_mano"]:checked').value;
+            if (tipo === 'subappalto') {
+                document.getElementById('box-mano-interna').classList.add('hidden');
+                document.getElementById('box-subappalto').classList.remove('hidden');
+            } else {
+                document.getElementById('box-mano-interna').classList.remove('hidden');
+                document.getElementById('box-subappalto').classList.add('hidden');
+            }
+            calcolaEbitda();
+        }
+
+        function calcolaEbitda() {
+            const ricavo = parseFloat(document.getElementById('com_ricavo').value) || 0;
+            const materiali = parseFloat(document.getElementById('com_mat').value) || 0;
+            const spese = parseFloat(document.getElementById('com_spese').value) || 0;
+            
+            const tipoMano = document.querySelector('input[name="tipo_mano"]:checked').value;
+            let costoMano = 0;
+
+            if (tipoMano === 'interna') {
+                const ore = parseFloat(document.getElementById('com_ore').value) || 0;
+                const costoOra = parseFloat(document.getElementById('com_costo_ora').value) || 0;
+                costoMano = ore * costoOra;
+            } else {
+                costoMano = parseFloat(document.getElementById('com_sub_costo').value) || 0;
+            }
+
+            const ebitda = ricavo - materiali - spese - costoMano;
+            const ebitdaPct = ricavo > 0 ? ((ebitda / ricavo) * 100).toFixed(1) : 0;
+
+            document.getElementById('out_com_ricavo').innerText = '€ ' + ricavo.toLocaleString('it-IT');
+            document.getElementById('out_com_mat').innerText = '- € ' + materiali.toLocaleString('it-IT');
+            document.getElementById('out_com_mano').innerText = '- € ' + costoMano.toLocaleString('it-IT');
+            document.getElementById('out_com_spese').innerText = '- € ' + spese.toLocaleString('it-IT');
+
+            const ebitdaEl = document.getElementById('out_ebitda_val');
+            ebitdaEl.innerText = '€ ' + ebitda.toLocaleString('it-IT');
+            document.getElementById('out_ebitda_pct').innerText = 'Margine Operativo: ' + ebitdaPct + '%';
+
+            if (ebitda < 0) {
+                ebitdaEl.className = 'text-3xl font-black text-rose-500 mt-1';
+            } else {
+                ebitdaEl.className = 'text-3xl font-black text-emerald-400 mt-1';
+            }
+        }
+
+        function generaContrattoSubappalto() {
+            const cliente = document.getElementById('com_cliente').value;
+            const sub = document.getElementById('sub_fornitore').value;
+            const importo = document.getElementById('com_sub_costo').value;
+
+            const testoContratto = `CONTRATTO DI SUBAPPALTO
+TecnoBlu s.r.l. affida a: ${sub}
+I lavori di installazione presso il cliente: ${cliente}
+Importo pattuito a corpo: € ${importo},00 + IVA.
+Oneri di sicurezza e conformità a carico del subappaltatore.`;
+
+            alert(testoContratto);
+        }
     </script>
 </body>
 </html>
